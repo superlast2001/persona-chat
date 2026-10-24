@@ -98,7 +98,7 @@
         <button id="btnLoadLib" class="btn" type="button">Load from lib</button>
       </div>
       <p id="promptStatus" class="note"></p>
-      <p class="note">Built-in = hard rules + general from <code>lib/prompt.txt</code> + intensity style + persona fields. <strong>Load from lib</strong> re-fetches <code>lib/prompt.txt</code> then rebuilds. Overrides stay in localStorage until you reset.</p>
+      <p class="note">Built-in = hard rules + general from <code>lib/prompt.txt</code> + STYLE_MAX/NORMAL/SOFT (or built-in fallbacks) + persona fields. <strong>Load from lib</strong> re-fetches <code>lib/prompt.txt</code> (cache-busted), clears this persona's override, and rebuilds. This textarea (not GitHub alone) is what the AI sees until you Load / Reset.</p>
     </div>
   </section>
 

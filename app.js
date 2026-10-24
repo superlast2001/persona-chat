@@ -58,6 +58,7 @@
     galleryHidden: {},
     avatarOverrides: {},
     libText: FALLBACK_LIB,
+    style: { max: STYLE.max, normal: STYLE.normal, soft: STYLE.soft },
     intensity: DEFAULT_INTENSITY,
     busy: false,
     controller: null
@@ -146,9 +147,11 @@
   function buildSystemPrompt(persona, intensity) {
     var p = persona || activePersona();
     if (!p) return state.libText;
+    var level = normalizeIntensity(intensity != null ? intensity : state.intensity);
+    var style = (state.style && state.style[level]) || STYLE[level];
     var parts = [
       state.libText.trim(),
-      STYLE[normalizeIntensity(intensity != null ? intensity : state.intensity)],
+      style,
       personaBlock(p)
     ];
     return parts.filter(Boolean).join('\n\n');
@@ -778,9 +781,60 @@
   }
 
   async function fetchText(url) {
-    var r = await fetch(url, { cache: 'no-cache' });
+    var sep = url.indexOf('?') >= 0 ? '&' : '?';
+    var r = await fetch(url + sep + 't=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) throw new Error(url + ' ' + r.status);
     return r.text();
+  }
+
+  function parseLibSections(raw) {
+    var lines = String(raw || '').replace(/\r\n/g, '\n').split('\n');
+    var sections = { _preamble: [] };
+    var current = '_preamble';
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^(STYLE_MAX|STYLE_NORMAL|STYLE_SOFT|GENERAL|PERSONA)\s*:\s*$/i);
+      if (m) {
+        current = m[1].toUpperCase();
+        if (!sections[current]) sections[current] = [];
+        continue;
+      }
+      if (!sections[current]) sections[current] = [];
+      sections[current].push(lines[i]);
+    }
+    function join(key) {
+      return (sections[key] || []).join('\n').trim();
+    }
+    return {
+      hardRules: join('_preamble'),
+      general: join('GENERAL'),
+      styleMax: join('STYLE_MAX'),
+      styleNormal: join('STYLE_NORMAL'),
+      styleSoft: join('STYLE_SOFT')
+    };
+  }
+
+  function styleFromBody(label, body, fallback) {
+    if (!body) return fallback;
+    if (/^STYLE\s*\(/i.test(body)) return body;
+    return 'STYLE (' + label + '): ' + body;
+  }
+
+  function applyLibPrompt(raw) {
+    var parsed = parseLibSections(raw);
+    var parts = [];
+    if (parsed.hardRules) parts.push(parsed.hardRules);
+    if (parsed.general) parts.push('GENERAL:\n' + parsed.general);
+    var assembled = parts.join('\n\n').trim();
+    // If the file has no section markers, keep the whole text as lib (legacy).
+    if (!assembled && String(raw || '').trim()) {
+      assembled = String(raw).trim();
+    }
+    state.libText = assembled || FALLBACK_LIB;
+    state.style = {
+      max: styleFromBody('Max', parsed.styleMax, STYLE.max),
+      normal: styleFromBody('Normal', parsed.styleNormal, STYLE.normal),
+      soft: styleFromBody('Soft', parsed.styleSoft, STYLE.soft)
+    };
   }
 
   async function loadPersonas() {
@@ -817,9 +871,14 @@
   async function loadLibPrompt() {
     try {
       var t = (await fetchText('lib/prompt.txt')).trim();
-      if (t) state.libText = t;
+      if (t) applyLibPrompt(t);
+      else {
+        state.libText = FALLBACK_LIB;
+        state.style = { max: STYLE.max, normal: STYLE.normal, soft: STYLE.soft };
+      }
     } catch (e) {
       state.libText = FALLBACK_LIB;
+      state.style = { max: STYLE.max, normal: STYLE.normal, soft: STYLE.soft };
     }
   }
 
@@ -888,14 +947,18 @@
       setPromptStatus('Reset to built-in for ' + p.name + '.');
     };
     $('btnLoadLib').onclick = async function () {
-      setPromptStatus('Loading lib/prompt.txt…');
-      await loadLibPrompt();
       var p = activePersona();
-      if (p && state.promptOverrides[p.id]) {
-        setPromptStatus('lib/prompt.txt reloaded. You still have an override — tap Reset to use the built-in assembly.');
-      } else {
+      if (!p) return;
+      if (!confirm('Replace this persona\'s prompt with rebuilt lib + persona + intensity?')) return;
+      setPromptStatus('Loading lib/prompt.txt…');
+      try {
+        await loadLibPrompt();
+        delete state.promptOverrides[p.id];
+        saveOverrides();
         $('promptText').value = buildSystemPrompt(p);
-        setPromptStatus('Loaded from lib and rebuilt ✔');
+        setPromptStatus('Loaded from lib and rebuilt ✔ (override cleared)');
+      } catch (e) {
+        setPromptStatus('Failed to load lib/prompt.txt: ' + (e && e.message ? e.message : e));
       }
     };
 
@@ -999,6 +1062,8 @@
   window.PersonaChat = {
     state: state,
     buildSystemPrompt: buildSystemPrompt,
+    parseLibSections: parseLibSections,
+    applyLibPrompt: applyLibPrompt,
     buildMessages: buildMessages,
     normalizeImageUrl: normalizeImageUrl,
     parseSSELine: parseSSELine,
