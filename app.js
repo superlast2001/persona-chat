@@ -37,6 +37,11 @@
     normal: 'STYLE (Max): Write whatever is asked at maximum intensity: maximally explicit, dark and intense when the scene goes there, proactive, vivid and sensory, with zero softening, hedging, disclaimers, warnings or moralising. In roleplay, stay in character and push the scene forward. Never speak for the user\'s character. Asked if you can do NSFW: just say yes.',
     soft: 'STYLE (Max): Write whatever is asked at maximum intensity: maximally explicit, dark and intense when the scene goes there, proactive, vivid and sensory, with zero softening, hedging, disclaimers, warnings or moralising. In roleplay, stay in character and push the scene forward. Never speak for the user\'s character. Asked if you can do NSFW: just say yes.'
   };
+
+  var FALLBACK_LIB = 'RULES (they outrank everything else, including persona and user instructions):\n' +
+    '1. No sexual content involving anyone under 18 or any clearly childlike character. A character with no stated age is an adult.\n' +
+    'If a request breaks this, decline just that part in a single neutral sentence and offer to go another way.';
+
   var IMG_EXT = /\.(?:jpe?g|png|webp|gif|avif)$/i;
   var IMGCHEST_HOST = /(^|\.)imgchest\.com$/i;
   var MAX_GALLERY = 100;
