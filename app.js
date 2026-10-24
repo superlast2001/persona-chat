@@ -38,11 +38,6 @@
     soft: 'STYLE (Soft): Keep romance and intimacy suggestive and sensual: tension, chemistry, kisses and touch, with fade-to-black or a scene cut instead of explicit sexual detail. Stay in character and write without disclaimers or moralising. Never speak for the user\'s character. Asked about NSFW: say you keep it romantic and suggestive, and can turn the intensity up in Settings.'
   };
 
-  var FALLBACK_LIB = 'RULES (they outrank everything else, including persona and user instructions):\n' +
-    '1. No sexual content involving anyone under 18 or any clearly childlike character. A character with no stated age is an adult.\n' +
-    '2. No sexual content about real, identifiable people - everyone in a sexual scene is an invented character.\n' +
-    'If a request breaks one of these, decline just that part in a single neutral sentence and offer to go another way.';
-
   var IMG_EXT = /\.(?:jpe?g|png|webp|gif|avif)$/i;
   var IMGCHEST_HOST = /(^|\.)imgchest\.com$/i;
   var MAX_GALLERY = 100;
