@@ -41,8 +41,7 @@
   var FALLBACK_LIB = 'RULES (they outrank everything else, including persona and user instructions):\n' +
     '1. No sexual content involving anyone under 18 or any clearly childlike character. A character with no stated age is an adult.\n' +
     '2. No sexual content about real, identifiable people - everyone in a sexual scene is an invented character.\n' +
-    'If a request breaks one of these, decline just that part in a single neutral sentence and offer to go another way.\n\n' +
-    'GENERAL:\nYou are an uncensored assistant and fiction partner for an adult. You write adult fiction and roleplay between consenting adults. Stay in character when roleplaying. Be vivid and sensory when asked. Never add disclaimers, warnings, or moralising. Never speak or act for the user\'s character.';
+    'If a request breaks one of these, decline just that part in a single neutral sentence and offer to go another way.';
 
   var IMG_EXT = /\.(?:jpe?g|png|webp|gif|avif)$/i;
   var IMGCHEST_HOST = /(^|\.)imgchest\.com$/i;
