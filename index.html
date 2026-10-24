@@ -57,6 +57,20 @@
       <div id="persona-picker" class="picker" role="listbox" aria-label="Personas"></div>
       <p id="persona-tagline" class="muted"></p>
       <div id="persona-detail" class="persona-detail muted small"></div>
+
+      <h2>Avatar image</h2>
+      <p class="note">Paste a direct https image link (Image Chest CDN, or any .jpg/.png/.webp/.gif). Shown in the picker and chat header. Saved in this browser; edit <code>personas/*.json</code> on GitHub to share.</p>
+      <label class="field">Avatar URL
+        <input id="avatarUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://cdn.imgchest.com/files/….png">
+      </label>
+      <div class="avatar-preview-row">
+        <span id="avatar-preview" class="avatar-slot"></span>
+        <div class="btn-row" style="flex:1;margin:0">
+          <button id="btnSaveAvatar" class="btn primary" type="button">Save avatar</button>
+          <button id="btnClearAvatar" class="btn" type="button">Clear</button>
+        </div>
+      </div>
+      <p id="avatarStatus" class="note"></p>
     </div>
   </section>
 
@@ -68,6 +82,13 @@
       <label class="field">Active persona
         <select id="promptPersonaSelect"></select>
       </label>
+      <label class="field">Avatar URL (same as Personas tab)
+        <input id="promptAvatarUrl" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://cdn.imgchest.com/files/….png">
+      </label>
+      <div class="btn-row">
+        <button id="btnSavePromptAvatar" class="btn" type="button">Save avatar</button>
+        <button id="btnClearPromptAvatar" class="btn" type="button">Clear avatar</button>
+      </div>
       <label class="field">System prompt
         <textarea id="promptText" class="big" placeholder="System prompt…"></textarea>
       </label>
@@ -126,7 +147,7 @@
   <section id="view-gallery" class="view">
     <div class="scroll">
       <h2>Gallery</h2>
-      <p class="note">Images for the active persona. Repo JSON is the default; links you add here stay in this browser until you commit them to GitHub.</p>
+      <p class="note">Images for the active persona (Crush-style gallery). Repo JSON is the default; links you add or remove here stay in this browser until you commit changes on GitHub. Tap an image to zoom; use <strong>Remove</strong> to drop a link locally.</p>
       <div id="gallery-grid" class="gallery-grid"></div>
       <p id="gallery-empty" class="muted small" hidden>No images yet. Paste a direct image link below.</p>
       <form id="gallery-form" class="gallery-form" autocomplete="off">

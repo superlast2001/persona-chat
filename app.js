@@ -10,6 +10,8 @@
     chats: 'pchat_chats',
     promptOverrides: 'pchat_prompt_overrides',
     galleryOverlay: 'pchat_gallery_overlay',
+    galleryHidden: 'pchat_gallery_hidden',
+    avatarOverrides: 'pchat_avatar_overrides',
     intensity: 'pchat_intensity'
   };
 
@@ -53,6 +55,8 @@
     chats: {},
     promptOverrides: {},
     galleryOverlay: {},
+    galleryHidden: {},
+    avatarOverrides: {},
     libText: FALLBACK_LIB,
     intensity: DEFAULT_INTENSITY,
     busy: false,
@@ -112,6 +116,23 @@
   function saveChats() { save(LS.chats, state.chats); }
   function saveOverrides() { save(LS.promptOverrides, state.promptOverrides); }
   function saveGalleryOverlay() { save(LS.galleryOverlay, state.galleryOverlay); }
+  function saveGalleryHidden() { save(LS.galleryHidden, state.galleryHidden); }
+  function saveAvatarOverrides() { save(LS.avatarOverrides, state.avatarOverrides); }
+
+  function effectiveAvatar(p) {
+    if (!p) return '';
+    if (Object.prototype.hasOwnProperty.call(state.avatarOverrides, p.id)) {
+      var ov = state.avatarOverrides[p.id];
+      if (ov === '' || ov == null) return '';
+      return normalizeImageUrl(ov) || '';
+    }
+    return p.avatar || '';
+  }
+
+  function personaWithAvatar(p) {
+    if (!p) return p;
+    return Object.assign({}, p, { avatar: effectiveAvatar(p) });
+  }
 
   function personaBlock(p) {
     var lines = ['PERSONA: ' + p.name];
@@ -143,12 +164,20 @@
 
   function mergedGallery(p) {
     if (!p) return [];
-    var base = cleanGallery(p.gallery);
-    var extra = cleanGallery(state.galleryOverlay[p.id] || []);
+    var hidden = {};
+    (state.galleryHidden[p.id] || []).forEach(function (u) { hidden[u] = 1; });
+    var base = cleanGallery(p.gallery).map(function (g) {
+      return Object.assign({}, g, { _source: 'repo' });
+    });
+    var extra = cleanGallery(state.galleryOverlay[p.id] || []).map(function (g) {
+      return Object.assign({}, g, { _source: 'local' });
+    });
     var seen = {};
     var out = [];
     base.concat(extra).forEach(function (g) {
-      if (!seen[g.url]) { seen[g.url] = 1; out.push(g); }
+      if (hidden[g.url] || seen[g.url]) return;
+      seen[g.url] = 1;
+      out.push(g);
     });
     return out.slice(0, MAX_GALLERY);
   }
@@ -373,7 +402,7 @@
     if (m.role === 'assistant' && p) {
       var row = document.createElement('div');
       row.className = 'msg-row assistant';
-      row.appendChild(makeAvatar(p, 'sm'));
+      row.appendChild(makeAvatar(personaWithAvatar(p), 'sm'));
       row.appendChild(el);
       return row;
     }
@@ -476,7 +505,7 @@
     var p = activePersona();
     var slot = $('header-avatar');
     slot.innerHTML = '';
-    if (p) slot.appendChild(makeAvatar(p, 'md'));
+    if (p) slot.appendChild(makeAvatar(personaWithAvatar(p), 'md'));
     $('header-name').textContent = p ? p.name : 'Persona Chat';
     $('model-tag').textContent = state.settings.model || '';
   }
@@ -490,7 +519,7 @@
       btn.className = 'pick' + (p.id === state.activeId ? ' selected' : '');
       btn.setAttribute('role', 'option');
       btn.setAttribute('aria-selected', p.id === state.activeId ? 'true' : 'false');
-      btn.appendChild(makeAvatar(p, 'lg'));
+      btn.appendChild(makeAvatar(personaWithAvatar(p), 'lg'));
       var n = document.createElement('span');
       n.className = 'pick-name';
       n.textContent = p.name;
@@ -517,6 +546,64 @@
     startChat(false);
   }
 
+  function fillAvatarFields() {
+    var p = activePersona();
+    var url = p ? effectiveAvatar(p) : '';
+    if ($('avatarUrl')) $('avatarUrl').value = url;
+    if ($('promptAvatarUrl')) $('promptAvatarUrl').value = url;
+    var prev = $('avatar-preview');
+    if (prev) {
+      prev.innerHTML = '';
+      if (p) prev.appendChild(makeAvatar(personaWithAvatar(p), 'lg'));
+    }
+  }
+
+  function setAvatarStatus(t) {
+    var el = $('avatarStatus');
+    if (el) el.textContent = t || '';
+  }
+
+  function saveAvatarFromInput(inputId) {
+    var p = activePersona();
+    if (!p) return;
+    var raw = ($(inputId) && $(inputId).value || '').trim();
+    if (!raw) {
+      state.avatarOverrides[p.id] = '';
+      saveAvatarOverrides();
+      fillAvatarFields();
+      refreshHeader();
+      renderPersonaPicker();
+      setAvatarStatus('Avatar cleared for ' + p.name + ' (browser only).');
+      setPromptStatus('Avatar cleared for ' + p.name + '.');
+      return;
+    }
+    var url = normalizeImageUrl(raw);
+    if (!url) {
+      setAvatarStatus('URL must be http(s) to an image (.jpg .png .webp .gif .avif) or imgchest.com.');
+      setPromptStatus('Invalid avatar URL.');
+      return;
+    }
+    state.avatarOverrides[p.id] = url;
+    saveAvatarOverrides();
+    fillAvatarFields();
+    refreshHeader();
+    renderPersonaPicker();
+    setAvatarStatus('Avatar saved for ' + p.name + ' ✔ (browser only — commit JSON on GitHub to share).');
+    setPromptStatus('Avatar saved for ' + p.name + ' ✔');
+  }
+
+  function clearAvatar() {
+    var p = activePersona();
+    if (!p) return;
+    state.avatarOverrides[p.id] = '';
+    saveAvatarOverrides();
+    fillAvatarFields();
+    refreshHeader();
+    renderPersonaPicker();
+    setAvatarStatus('Avatar cleared for ' + p.name + '.');
+    setPromptStatus('Avatar cleared for ' + p.name + '.');
+  }
+
   function fillPromptEditor() {
     var sel = $('promptPersonaSelect');
     sel.innerHTML = '';
@@ -527,9 +614,33 @@
     });
     if (state.activeId) sel.value = state.activeId;
     $('promptText').value = effectiveSystemPrompt();
+    fillAvatarFields();
   }
 
   function setPromptStatus(t) { $('promptStatus').textContent = t || ''; }
+
+  function removeGalleryItem(url) {
+    var p = activePersona();
+    if (!p) return;
+    var overlay = cleanGallery(state.galleryOverlay[p.id] || []);
+    var before = overlay.length;
+    overlay = overlay.filter(function (g) { return g.url !== url; });
+    if (overlay.length !== before) {
+      state.galleryOverlay[p.id] = overlay;
+      saveGalleryOverlay();
+    } else {
+      var hidden = (state.galleryHidden[p.id] || []).slice();
+      if (hidden.indexOf(url) < 0) hidden.push(url);
+      state.galleryHidden[p.id] = hidden;
+      saveGalleryHidden();
+    }
+    var status = $('gallery-status');
+    if (status) {
+      status.textContent = 'Removed locally (browser only).';
+      status.className = 'small ok';
+    }
+    renderGallery();
+  }
 
   function renderGallery() {
     var p = activePersona();
@@ -538,11 +649,20 @@
     var items = mergedGallery(p);
     $('gallery-empty').hidden = items.length > 0;
     items.forEach(function (g) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'thumb';
+      var wrap = document.createElement('div');
+      wrap.className = 'thumb';
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'thumb-remove';
+      rm.textContent = 'Remove';
+      rm.onclick = function (e) {
+        e.stopPropagation();
+        if (!confirm('Remove this image from the gallery (this browser)?')) return;
+        removeGalleryItem(g.url);
+      };
+      wrap.appendChild(rm);
       var img = document.createElement('img');
-      img.loading = 'lazy'; img.decoding = 'async'; img.alt = '';
+      img.loading = 'lazy'; img.decoding = 'async'; img.alt = g.caption || 'gallery';
       img.referrerPolicy = 'no-referrer';
       img.src = g.url;
       img.addEventListener('error', function () {
@@ -551,7 +671,11 @@
         broken.textContent = 'Unavailable';
         if (img.parentNode) img.parentNode.replaceChild(broken, img);
       });
-      btn.appendChild(img);
+      img.style.cursor = 'zoom-in';
+      img.onclick = function () { openLightbox(g.url, g.caption || ''); };
+      wrap.appendChild(img);
+      var meta = document.createElement('div');
+      meta.className = 'thumb-meta';
       if (g.caption || g.tag) {
         var cap = document.createElement('div');
         cap.className = 'thumb-cap';
@@ -562,10 +686,14 @@
           cap.appendChild(tag);
         }
         if (g.caption) cap.appendChild(document.createTextNode(g.caption));
-        btn.appendChild(cap);
+        meta.appendChild(cap);
       }
-      btn.onclick = function () { openLightbox(g.url, g.caption || ''); };
-      grid.appendChild(btn);
+      var src = document.createElement('div');
+      src.className = 'thumb-src';
+      src.textContent = g._source === 'local' ? 'local' : 'from repo';
+      meta.appendChild(src);
+      wrap.appendChild(meta);
+      grid.appendChild(wrap);
     });
   }
 
@@ -632,7 +760,7 @@
       t.classList.toggle('active', t.getAttribute('data-view') === name);
     });
     if (name === 'chat') renderMessages();
-    if (name === 'personas') renderPersonaPicker();
+    if (name === 'personas') { renderPersonaPicker(); fillAvatarFields(); }
     if (name === 'prompt') fillPromptEditor();
     if (name === 'gallery') renderGallery();
     if (name === 'settings') renderSettings();
@@ -718,6 +846,8 @@
     state.chats = load(LS.chats, {}) || {};
     state.promptOverrides = load(LS.promptOverrides, {}) || {};
     state.galleryOverlay = load(LS.galleryOverlay, {}) || {};
+    state.galleryHidden = load(LS.galleryHidden, {}) || {};
+    state.avatarOverrides = load(LS.avatarOverrides, {}) || {};
     state.intensity = normalizeIntensity(localStorage.getItem(LS.intensity));
 
     await loadLibPrompt();
@@ -808,6 +938,11 @@
       renderGallery();
     };
 
+    if ($('btnSaveAvatar')) $('btnSaveAvatar').onclick = function () { saveAvatarFromInput('avatarUrl'); };
+    if ($('btnClearAvatar')) $('btnClearAvatar').onclick = clearAvatar;
+    if ($('btnSavePromptAvatar')) $('btnSavePromptAvatar').onclick = function () { saveAvatarFromInput('promptAvatarUrl'); };
+    if ($('btnClearPromptAvatar')) $('btnClearPromptAvatar').onclick = clearAvatar;
+
     var picks = $('modelPicks');
     MODEL_PICKS.forEach(function (m) {
       var b = document.createElement('button');
@@ -866,7 +1001,10 @@
     buildSystemPrompt: buildSystemPrompt,
     buildMessages: buildMessages,
     normalizeImageUrl: normalizeImageUrl,
-    parseSSELine: parseSSELine
+    parseSSELine: parseSSELine,
+    effectiveAvatar: effectiveAvatar,
+    mergedGallery: mergedGallery,
+    personaWithAvatar: personaWithAvatar
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootGate);

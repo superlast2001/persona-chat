@@ -57,8 +57,24 @@ Bottom nav: **Chat | Personas | Prompt | Settings | Gallery**.
 - Persona avatar in the header.
 - If the model writes an image URL (http(s), image extension or imgchest), it shows inline.
 
-## 6. Gallery
-Shows the active persona's gallery from JSON. You can **add link + caption locally** (localStorage overlay; no admin token). Repo gallery is the shared default until you commit changes on GitHub. Only use images you own of fictional adult characters.
+## 6. Avatars and gallery (Image Chest links)
+
+Persona Chat never uploads or hosts images — **links only**. Your browser loads them directly (`referrerpolicy=no-referrer`).
+
+### Upload once, paste the direct link
+1. Upload an image you own (fictional adult characters only) to [Image Chest](https://imgchest.com) or any image host.
+2. Copy the **direct** file URL, e.g. `https://cdn.imgchest.com/files/xxxx.png` (must be http/https and end in `.jpg` / `.jpeg` / `.png` / `.webp` / `.gif` / `.avif`, or use an `imgchest.com` host).
+3. Paste it into:
+   - **Personas** or **Prompt** tab → **Avatar URL** → Save (shown in picker + chat header), or
+   - **Gallery** tab → URL + optional caption/tag → **Add to gallery** (tap image to zoom; **Remove** drops it in this browser).
+4. To share with everyone, put the same URL in the persona JSON on GitHub:
+   - `"avatar": "https://cdn.imgchest.com/files/xxxx.png"`
+   - `"gallery": [{ "url": "https://…", "caption": "…", "tag": "…" }]`
+
+Local avatar/gallery edits stay in this browser until you commit. Do not paste images of real people into sexual contexts (hard rules still apply in the prompt).
+
+### Inline images in chat
+If the model writes an image URL in a reply, Persona Chat renders it as an inline image (same URL rules as above).
 
 ## Files
 - `index.html`, `style.css`, `app.js`, `render.js` — the app (no build step)
