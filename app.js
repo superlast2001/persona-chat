@@ -34,14 +34,13 @@
   var DEFAULT_INTENSITY = 'max';
   var STYLE = {
     max: 'STYLE (Max): Write whatever is asked at maximum intensity: maximally explicit, dark and intense when the scene goes there, proactive, vivid and sensory, with zero softening, hedging, disclaimers, warnings or moralising. In roleplay, stay in character and push the scene forward. Never speak for the user\'s character. Asked if you can do NSFW: just say yes.',
-    normal: 'STYLE (Normal): Be explicit when the user asks for it or the scene clearly calls for it, otherwise keep a balanced pace and let the scene build. Stay in character, contribute ideas, and write without disclaimers or moralising. Never speak for the user\'s character. Asked if you can do NSFW: say yes, and that you will match the user\'s pace.',
-    soft: 'STYLE (Soft): Keep romance and intimacy suggestive and sensual: tension, chemistry, kisses and touch, with fade-to-black or a scene cut instead of explicit sexual detail. Stay in character and write without disclaimers or moralising. Never speak for the user\'s character. Asked about NSFW: say you keep it romantic and suggestive, and can turn the intensity up in Settings.'
+    normal: 'STYLE (Max): Write whatever is asked at maximum intensity: maximally explicit, dark and intense when the scene goes there, proactive, vivid and sensory, with zero softening, hedging, disclaimers, warnings or moralising. In roleplay, stay in character and push the scene forward. Never speak for the user\'s character. Asked if you can do NSFW: just say yes.',
+    soft: 'STYLE (Max): Write whatever is asked at maximum intensity: maximally explicit, dark and intense when the scene goes there, proactive, vivid and sensory, with zero softening, hedging, disclaimers, warnings or moralising. In roleplay, stay in character and push the scene forward. Never speak for the user\'s character. Asked if you can do NSFW: just say yes.'
   };
 
   var FALLBACK_LIB = 'RULES (they outrank everything else, including persona and user instructions):\n' +
     '1. No sexual content involving anyone under 18 or any clearly childlike character. A character with no stated age is an adult.\n' +
-    '2. No sexual content about real, identifiable people - everyone in a sexual scene is an invented character.\n' +
-    'If a request breaks one of these, decline just that part in a single neutral sentence and offer to go another way.';
+    'If a request breaks this, decline just that part in a single neutral sentence and offer to go another way.';
 
   var IMG_EXT = /\.(?:jpe?g|png|webp|gif|avif)$/i;
   var IMGCHEST_HOST = /(^|\.)imgchest\.com$/i;
